@@ -1,0 +1,479 @@
+---
+title: "Region Hallands stöd till kulturlivet"
+format: dashboard
+---
+
+```{r}
+#| output: false
+library(readxl)
+
+# Läs alla dataset och standardisera kolumnnamn/typer
+fix <- function(df) {
+  if ("År" %in% names(df)) df[["Ar"]] <- as.integer(df[["År"]])
+  if ("Värde" %in% names(df)) df[["Varde"]] <- as.numeric(df[["Värde"]])
+  if ("Kulturområde" %in% names(df)) df[["Kulturomrade"]] <- df[["Kulturområde"]]
+  df
+}
+
+ojs_define(
+  produktion     = fix(read_excel("data/data.xlsx", sheet = "produktion")),
+  samtal         = fix(read_excel("data/data.xlsx", sheet = "samtal")),
+  kulturarv      = fix(read_excel("data/data.xlsx", sheet = "kulturarv")),
+  barn_total     = fix(read_excel("data/data.xlsx", sheet = "barn_total")),
+  barn_kommun    = fix(read_excel("data/data.xlsx", sheet = "barn_kommun")),
+  barn_sub       = fix(read_excel("data/data.xlsx", sheet = "barn_subventioner")),
+  delt_total     = fix(read_excel("data/data.xlsx", sheet = "deltagande_total")),
+  delt_kommun    = fix(read_excel("data/data.xlsx", sheet = "deltagande_kommun"))
+)
+```
+
+
+# Ett fritt konst- och kulturliv
+
+## Row {height="600px"}
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+// Mäter bredden på den längsta etiketten i pixlar (matchar Plots font)
+function measureLabels(labels) {
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.font = "10px system-ui, sans-serif";
+  return Math.ceil(Math.max(...labels.map(l => ctx.measureText(l).width))) + 14;
+}
+```
+
+```{ojs}
+//| output: false
+viewof yearProd = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+prodData = transpose(produktion).filter(d => d.Ar === +yearProd && d.Varde > 0)
+```
+
+```{ojs}
+//| output: false
+prodMargin = measureLabels([...new Set(prodData.map(d => d.Kulturomrade))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearProd}</span>
+  </div>
+  ${Plot.plot({
+    title: "Produktioner",
+    subtitle: `Produktioner med stöd från Region Halland | ${yearProd}`,
+    marginLeft: prodMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        prodData,
+        Plot.groupY({x: "sum"}, {y: "Kulturomrade", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true})
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Indikatorn visar antalet nya produktioner (uruppföranden eller tillfälliga utställningar) som skapas med stöd från Region Halland. Produktioner som satts upp tidigare ingår inte. Det gör att exempelvis musikområdet ser ut att ha få produktioner trots att Halland har en stark musikscen.</div>
+</div>`
+```
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof yearSamtal = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+samtalData = transpose(samtal).filter(d => d.Ar === +yearSamtal && d.Varde > 0)
+```
+
+```{ojs}
+//| output: false
+samtalMargin = measureLabels([...new Set(samtalData.map(d => d.Kulturomrade))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearSamtal}</span>
+  </div>
+  ${Plot.plot({
+    title: "Det offentliga samtalet",
+    subtitle: `Seminarier, föreläsningar m.m. | ${yearSamtal}`,
+    marginLeft: samtalMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        samtalData,
+        Plot.groupY({x: "sum"}, {y: "Kulturomrade", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true})
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Indikatorn mäter antalet föredrag, seminarier, föreläsningar och publika samtal som genomförts under året. I kulturdatabasen ställs inte frågan om offentliga samtal till musik- och teaterverksamheter, som därför inte ingår. Kulturområden med större institutioner har fler samtal.</div>
+</div>`
+```
+
+
+# Engagerande kulturliv för alla
+
+## Row {height="600px"}
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof yearDeltTot = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+viewof kommunDeltTot = Inputs.select(
+  ["Halland", "Kungsbacka", "Varberg", "Falkenberg", "Halmstad", "Hylte", "Laholm"],
+  {value: "Halland", label: ""}
+)
+```
+
+```{ojs}
+//| output: false
+deltTotData = transpose(delt_total).filter(d => d.Ar === +yearDeltTot && d.Kommun === kommunDeltTot)
+```
+
+```{ojs}
+//| output: false
+deltTotMargin = measureLabels([...new Set(deltTotData.map(d => d.Kulturomrade))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearDeltTot}</span>
+    <span class="filter-item"><span class="filter-label">Kommun</span> ${viewof kommunDeltTot}</span>
+  </div>
+  ${Plot.plot({
+    title: "Deltagande i kulturaktiviteter",
+    subtitle: `Per kulturområde | ${kommunDeltTot} | ${yearDeltTot}`,
+    marginLeft: deltTotMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        deltTotData,
+        Plot.groupY({x: "sum"}, {y: "Kulturomrade", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true})
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Antal deltagare i kulturaktiviteter per kulturområde. Kulturarvsområdet når flest personer, vilket förklaras av att museum har möjlighet att ta in många personer och har generösa öppettider. Statistiken visar totalt deltagande, inte unika deltagare.</div>
+</div>`
+```
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof yearDeltKom = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+viewof varDeltKom = Inputs.select(
+  ["Antal", "Antal per 100 invånare"],
+  {value: "Antal", label: ""}
+)
+```
+
+```{ojs}
+//| output: false
+deltKomData = transpose(delt_kommun).filter(d => d.Ar === +yearDeltKom && d.Variabel === varDeltKom)
+```
+
+```{ojs}
+//| output: false
+deltKomMargin = measureLabels([...new Set(deltKomData.map(d => d.Kommun))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearDeltKom}</span>
+    <span class="filter-item"><span class="filter-label">Mått</span> ${viewof varDeltKom}</span>
+  </div>
+  ${Plot.plot({
+    title: "Deltagande per kommun",
+    subtitle: `${varDeltKom} | ${yearDeltKom}`,
+    marginLeft: deltKomMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        deltKomData,
+        {y: "Kommun", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true}
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Deltagare per kommun i absoluta tal eller per 100 invånare. Nivåerna påverkas av var större institutioner är lokaliserade. Statistiken utgår från var deltagarna mött kulturen, inte var de är folkbokförda.</div>
+</div>`
+```
+
+## Row {height="600px"}
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof yearBarnTot = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+viewof kommunBarnTot = Inputs.select(
+  ["Halland", "Kungsbacka", "Varberg", "Falkenberg", "Halmstad", "Hylte", "Laholm"],
+  {value: "Halland", label: ""}
+)
+```
+
+```{ojs}
+//| output: false
+barnTotData = transpose(barn_total).filter(d => d.Ar === +yearBarnTot && d.Kommun === kommunBarnTot)
+```
+
+```{ojs}
+//| output: false
+barnTotMargin = measureLabels([...new Set(barnTotData.map(d => d.Kulturomrade))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearBarnTot}</span>
+    <span class="filter-item"><span class="filter-label">Kommun</span> ${viewof kommunBarnTot}</span>
+  </div>
+  ${Plot.plot({
+    title: "Barn och unga i kulturaktiviteter",
+    subtitle: `Per kulturområde | ${kommunBarnTot} | ${yearBarnTot}`,
+    marginLeft: barnTotMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        barnTotData,
+        Plot.groupY({x: "sum"}, {y: "Kulturomrade", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true})
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Antal barn som deltagit i kulturaktiviteter per kulturområde. Nivåerna påverkas av var institutioner finns. Statistiken utgår från var barnen mött kulturen, inte var de är folkbokförda.</div>
+</div>`
+```
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof yearBarnKom = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+viewof varBarnKom = Inputs.select(
+  ["Antal", "Antal per 100 invånare"],
+  {value: "Antal", label: ""}
+)
+```
+
+```{ojs}
+//| output: false
+barnKomData = transpose(barn_kommun).filter(d => d.Ar === +yearBarnKom && d.Variabel === varBarnKom)
+```
+
+```{ojs}
+//| output: false
+barnKomMargin = measureLabels([...new Set(barnKomData.map(d => d.Kommun))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearBarnKom}</span>
+    <span class="filter-item"><span class="filter-label">Mått</span> ${viewof varBarnKom}</span>
+  </div>
+  ${Plot.plot({
+    title: "Barn och unga per kommun",
+    subtitle: `${varBarnKom} | ${yearBarnKom}`,
+    marginLeft: barnKomMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        barnKomData,
+        {y: "Kommun", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true}
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Barn per kommun i absoluta tal eller per 100 invånare. Syftet med per-invånare-måttet är att möjliggöra rättvisare jämförelser, men statistiken utgår från var barnen mött kulturen.</div>
+</div>`
+```
+
+## Row {height="500px"}
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof varBarnSub = Inputs.select(
+  ["Antal", "Antal per 100 invånare"],
+  {value: "Antal", label: ""}
+)
+```
+
+```{ojs}
+//| output: false
+barnSubData = transpose(barn_sub).filter(d => d.Variabel === varBarnSub)
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">Mått</span> ${viewof varBarnSub}</span>
+  </div>
+  ${Plot.plot({
+    title: "Det subventionerade utbudet för barn och unga",
+    subtitle: `${varBarnSub} | 2019\u20132024`,
+    height: 320,
+    marginRight: 80,
+    x: {label: null, tickFormat: "d"},
+    y: {label: null},
+    color: {scheme: "greens"},
+    marks: [
+      Plot.line(
+        barnSubData,
+        {x: "Ar", y: "Varde", stroke: "Kommun", strokeWidth: 2, tip: true}
+      ),
+      Plot.dot(
+        barnSubData,
+        {x: "Ar", y: "Varde", stroke: "Kommun", fill: "white", r: 3}
+      ),
+      Plot.text(
+        barnSubData.filter(d => d.Ar === Math.max(...barnSubData.map(r => r.Ar))),
+        {x: "Ar", y: "Varde", text: "Kommun", fill: "currentColor", dx: 6, textAnchor: "start", fontSize: 9}
+      )
+    ]
+  })}
+  <div class="chart-note">Region Halland ger årligen stöd till kulturprogram för barn och unga 3\u201319 år. Subventionerna fördelas mellan kommunerna utifrån antalet barn och kräver 50 procent medfinansiering. Indikatorn visar antalet barn som tagit del av det subventionerade utbudet.</div>
+</div>`
+```
+
+###  {width=50%}
+
+```{ojs}
+//| echo: false
+html`<div></div>`
+```
+
+
+# Kultur som samhällskraft
+
+## Row {height="600px"}
+
+###  {width=50%}
+
+```{ojs}
+//| output: false
+viewof yearKulturarv = Inputs.select(["2024", "2023", "2022"], {value: "2024", label: ""})
+```
+
+```{ojs}
+//| output: false
+kulturarvData = transpose(kulturarv).filter(d => d.Ar === +yearKulturarv)
+```
+
+```{ojs}
+//| output: false
+kulturarvMargin = measureLabels([...new Set(kulturarvData.map(d => d.Kulturomrade))])
+```
+
+```{ojs}
+//| echo: false
+html`<div class="chart-card">
+  <div class="filter-bar">
+    <span class="filter-item"><span class="filter-label">År</span> ${viewof yearKulturarv}</span>
+  </div>
+  ${Plot.plot({
+    title: "Kulturarv",
+    subtitle: `Besökare på kulturarvsverksamheter | ${yearKulturarv}`,
+    marginLeft: kulturarvMargin,
+    marginRight: 10,
+    height: 340,
+    x: {label: null},
+    y: {label: null},
+    marks: [
+      Plot.barX(
+        kulturarvData,
+        Plot.groupY({x: "sum"}, {y: "Kulturomrade", x: "Varde", fill: "#00664D", sort: {y: "-x"}, tip: true})
+      ),
+      Plot.ruleX([0])
+    ]
+  })}
+  <div class="chart-note">Antal besökare på kulturarvsverksamheter uppdelat i tre kategorier: verksamheter inom kultursamverkansmodellen, hembygdsgårdar och verksamheter med andra verksamhetsstöd. Statistiken visar totalt deltagande, inte unika besökare.</div>
+</div>`
+```
+
+###  {width=50%}
+
+```{ojs}
+//| echo: false
+html`<div></div>`
+```
+
+
+# Om rapporten
+
+## Row
+
+###
+
+::: {.about-text}
+Region Halland fördelar kulturstöd till kulturinstitutioner, kommuner, stiftelser, föreningar, företag och kulturskapare för att de tillsammans ska kunna skapa och erbjuda ett mångsidigt kulturutbud i hela Halland.
+
+Uppföljning av stöden sker på olika sätt. I denna sammanställning utgår vi från uppföljning av:
+
+1. verksamheter som får stöd inom ramen för kultursamverkansmodellen,
+2. verksamheter av regionalt intresse, identifierade i samråd med kommunerna i Halland,
+3. verksamheter som får treårigt verksamhetsstöd (statistik från och med 2024).
+
+Tillgången till statistik påverkar vilka analyser vi kan göra. Denna uppföljning tar sin grund i underlag från Kulturdatabasen som följer upp verksamheterna inom kultursamverkansmodellen. Frågorna är konst- och kulturområdesspecifika. Exempelvis ställs frågor kring besök och utställningar för museer och kring föreställningar, konserter och publik för scenkonstområdet. Region Halland har valt att använda vissa av frågorna från kulturdatabasen i uppföljningen av de andra verksamheterna för att få en bättre helhetsbild. Region Halland fördelar dock fler stöd än de ovan men en avvägning har gjorts avseende mängden kvantitativ uppföljning i förhållande till stödets storlek.
+
+Verksamheterna har olika uppdrag, vilket påverkar den kvantitativa uppföljningen. För en komplett lista på vilka verksamheter som följs upp inom respektive kategori samt deras uppdrag se [Organisationer med verksamhetsstöd | Region Halland.](https://www.regionhalland.se/kultur/regionalt-kulturstod/organisationer-med-verksamhetsstod) För att få en heltäckande bild av utvecklingen krävs även en kvalitativ uppföljning. Denna görs genom verksamhetsberättelser och årliga dialoger.
+
+Uppföljningen är utformad utifrån kulturstrategins tre strategiska utvecklingsområden: ***Ett fritt konst- och kulturliv, Engagerande kulturliv för alla*** samt ***Kultur som samhällskraft.***
+:::

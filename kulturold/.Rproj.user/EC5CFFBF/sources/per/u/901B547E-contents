@@ -1,0 +1,5 @@
+data <- read_excel("testdata.xlsx") |>
+  pivot_longer(3:4, names_to="år", values_to="värde") |>
+  set_names("Verksamhet", "Kulturform", "År", "Värde") |>
+  writexl::write_xlsx("test.xlsx")
+  

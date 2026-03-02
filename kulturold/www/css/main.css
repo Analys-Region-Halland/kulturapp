@@ -1,0 +1,84 @@
+/* ====== Layout och grundläggande stilar ====== */
+.explanation-text h3 {
+  font-size: 12pt;
+}
+
+.explanation-text p {
+  font-size: 10.5pt;
+  max-width: 550px;
+}
+
+.picker-wrapper {
+  margin-bottom: 15px;
+}
+
+/* ====== Logo och header ====== */
+.title-logo {
+  height: 30px;
+  margin-right: 15px;
+  transition: opacity 0.2s ease;
+}
+
+.title-logo:hover {
+  opacity: 0.7;
+}
+
+/* ====== Navigation och tabbar ====== */
+.nav-tabs .nav-link {
+  font-size: 9pt;
+  padding: 6px 12px;
+}
+
+/* ====== Card stilar ====== */
+.card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.nav-tabs {
+  flex: 1;
+}
+
+/* ====== Select/Dropdown stilar ====== */
+.bootstrap-select .dropdown-toggle {
+  font-size: 12px !important;  /* Textstorlek i huvudknappen */
+}
+
+.bootstrap-select .dropdown-menu li a {
+  font-size: 12px !important;  /* Textstorlek i dropdown-listan */
+}
+
+.bootstrap-select .filter-option {
+  font-size: 12px !important;  /* Textstorlek för valda alternativ */
+}
+
+.bootstrap-select .bs-actionsbox button {
+  font-size: 11px !important;  /* Textstorlek för 'Select All'/'Deselect All' knappar */
+  padding: 4px 8px !important;  /* Mindre padding för knapparna */
+}
+
+/* ====== Download knappar ====== */
+.download-button {
+  padding: 4px 8px !important;
+  font-size: 0.8rem !important;
+  margin-right: 5px;
+}
+
+.download-button:last-child {
+  margin-right: 0;
+}
+
+.download-container {
+  position: absolute;
+  right: 10px;
+}
+
+/* ====== Kort header ====== */
+.card-title-container {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+

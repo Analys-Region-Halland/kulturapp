@@ -1,0 +1,14 @@
+name: kultur
+title: kultur
+username:
+account: regionhalland
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14865646
+bundleId: 10422607
+url: https://regionhalland.shinyapps.io/kultur/
+when: 1749464077.95003
+lastSyncTime: 1749464077.95005
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: barn_total.xlsx|databearbetning_barn.R|grunddata_barn.xlsx|grunddata_vuxna.xlsx|Manus dragning 20Mars.docx|vuxna_kommun.xlsx|vuxna_total.xlsx

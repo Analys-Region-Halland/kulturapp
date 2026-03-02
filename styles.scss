@@ -1,0 +1,762 @@
+// ==========================================================================
+// Region Halland Dashboard — inspirerad av grafgalleriets designspråk
+// ==========================================================================
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Merriweather:ital,wght@0,300;0,400;1,300&family=Roboto:wght@400;500;700;900&display=swap');
+
+/*-- scss:defaults --*/
+
+$green: #00664D;
+$green-dark: #004538;
+$green-mid: #008C68;
+$green-light: #e8f5e9;
+$ink: #1a1a2e;
+$ink-body: #2d2d3a;
+$ink-muted: #555;
+$bg: #f5f6f8;
+$card-bg: #fff;
+$border: #e2e4e8;
+$text-muted: #6b7280;
+$text-light: #9ca3af;
+$ease: cubic-bezier(.4, 0, .2, 1);
+
+$body-bg: $bg;
+$body-color: $ink;
+$font-family-sans-serif: 'Inter', -apple-system, sans-serif;
+
+/*-- scss:rules --*/
+
+// ==========================================================================
+// GRUNDLÄGGANDE
+// ==========================================================================
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: $bg;
+  color: $ink;
+  -webkit-font-smoothing: antialiased;
+}
+
+// ==========================================================================
+// NAVBAR
+// ==========================================================================
+
+.navbar {
+  background: $green-dark !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
+  padding: 0 2rem;
+  min-height: 44px;
+}
+
+.navbar-brand,
+.navbar-title {
+  color: #fff !important;
+}
+
+.navbar-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: .9rem;
+  letter-spacing: -.01em;
+}
+
+.navbar-logo {
+  max-height: 24px;
+  width: auto;
+  margin-right: .5rem;
+}
+
+.navbar .nav-link {
+  font-family: 'Inter', sans-serif;
+  font-size: .58rem;
+  font-weight: 500;
+  color: #fff !important;
+  padding: .1rem .45rem;
+  margin: 0 1px;
+  border-radius: 8px;
+  border: none !important;
+  line-height: 1.3;
+  background: transparent !important;
+  transition: all .15s $ease;
+
+  &:hover {
+    color: $green-light !important;
+  }
+
+  &.active {
+    color: $green-light !important;
+    font-weight: 600;
+    background: rgba(255, 255, 255, .08) !important;
+  }
+}
+
+// ==========================================================================
+// SIDEBAR — ren, strukturerad filterpanel
+// ==========================================================================
+
+.dashboard-sidebar,
+.sidebar {
+  background: #fff;
+  border-right: 2px solid $ink;
+  padding: 1.25rem 1.25rem 2rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+
+  h2, h3, .sidebar-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: $text-light;
+    margin-bottom: 1.25rem;
+    padding-bottom: .6rem;
+    border-bottom: 2px solid $ink;
+  }
+
+  label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 700;
+    font-size: .72rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: $ink;
+    margin-bottom: .35rem;
+    display: block;
+  }
+
+  // OJS-inputs inne i sidebaren
+  select,
+  input[type="text"] {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: .82rem;
+    border: 2px solid $ink;
+    border-radius: 0;
+    padding: .5rem .75rem;
+    background: #fff;
+    color: $ink;
+    width: 100%;
+    transition: border-color .2s;
+
+    &:focus {
+      outline: none;
+      border-color: $green;
+    }
+  }
+
+  input[type="range"] {
+    accent-color: $green;
+  }
+
+  form {
+    margin-bottom: 1rem;
+  }
+}
+
+// ==========================================================================
+// CARDS
+// ==========================================================================
+
+.card {
+  background: $card-bg;
+  border: 1px solid $border !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+  overflow: visible;
+}
+
+.card-header {
+  background: #fff;
+  border-bottom: 1px solid $border !important;
+  padding: .4rem .75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: .78rem;
+  font-weight: 600;
+  color: $ink;
+}
+
+.card-body {
+  padding: 0;
+
+  // Dölj Quartos code-scaffold wrappers
+  > .code-copy-outer-scaffold {
+    display: none !important;
+  }
+
+  > .cell .sourceCode.hidden,
+  > .cell .cell-code.hidden {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  > .cell:has(.cell-code.hidden):not(:has(.cell-output-display)) {
+    display: none !important;
+  }
+}
+
+
+// ==========================================================================
+// EXPLICIT TEXTFÄRGER — säkerställ mörk text på vita ytor
+// ==========================================================================
+
+.card-body,
+.cell-output,
+.cell-output-display {
+  color: $ink;
+}
+
+// Alla OJS-celler ska ha mörk text som standard
+.cell-output-display > div,
+.cell-output-display > p,
+.cell-output-display span {
+  color: $ink;
+}
+
+// Value boxes (borttagna från översikt, men behåll stil ifall)
+.valuebox {
+  border: 2px solid $ink !important;
+  border-radius: 0 !important;
+  box-shadow: none;
+
+  // Säkerställ vit text på mörka value boxes
+  &[style*="background"] {
+    .value, .title, .bi { color: #fff; }
+  }
+
+  .value {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 800;
+    font-size: 1.8rem;
+    letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+}
+
+// ==========================================================================
+// NARRATIV TEXTBLOCK — Merriweather för läsbarhet
+// ==========================================================================
+
+.narrative-block {
+  font-family: 'Merriweather', serif;
+  font-size: .875rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: $ink-body;
+
+  p {
+    margin-bottom: .75em;
+    &:last-child { margin-bottom: 0; }
+  }
+
+  strong {
+    font-weight: 700;
+    color: $ink;
+  }
+}
+
+// Big number — kontextuella siffror
+.big-num {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 800;
+  font-size: 2.2rem;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+  color: $green;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: .2rem;
+}
+
+.big-num-label {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .75rem;
+  font-weight: 500;
+  color: $text-muted;
+  line-height: 1.35;
+}
+
+// KPI-rad
+.kpi-row {
+  display: flex;
+  gap: 0;
+  margin-bottom: .75rem;
+}
+
+.kpi-block {
+  flex: 1;
+  min-width: 0;
+
+  &:not(:last-child) {
+    padding-right: .75rem;
+    margin-right: .75rem;
+    border-right: 1px solid $border;
+  }
+}
+
+// Kontextlinje — vänsterkant med accent
+.ctx-line {
+  padding: .6rem 0 .6rem 1rem;
+  border-left: 3px solid $green;
+  margin-bottom: .75rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .82rem;
+  color: $ink-muted;
+  line-height: 1.5;
+}
+
+// ==========================================================================
+// TABSET — renare
+// ==========================================================================
+
+.nav-tabs {
+  border-bottom: 2px solid $ink;
+
+  .nav-link {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: $text-muted;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: .6rem 1.2rem;
+    margin-bottom: -2px;
+    transition: all .2s;
+
+    &:hover {
+      color: $ink;
+    }
+
+    &.active {
+      color: $green;
+      border-bottom-color: $green;
+      background: transparent;
+    }
+  }
+}
+
+// ==========================================================================
+// TABELLER
+// ==========================================================================
+
+table {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .82rem;
+}
+
+table thead th {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: .68rem;
+  letter-spacing: .04em;
+  color: $ink;
+  border-bottom: 2px solid $ink;
+  padding: .5rem .75rem;
+}
+
+table tbody td {
+  padding: .45rem .75rem;
+  border-bottom: 1px solid #f0f0ee;
+  color: $ink-body;
+}
+
+table tbody tr:hover {
+  background: $green-light;
+}
+
+// ==========================================================================
+// GRAF-CONTAINER — matchar grafgalleriets stil
+// ==========================================================================
+
+.graf-wrap {
+  background: #fff;
+  border: 2px solid $ink;
+  width: 100%;
+
+  .graf-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: $ink;
+    line-height: 1.25;
+    padding: .75rem 1.25rem .5rem;
+    margin: 0;
+  }
+
+  .graf-subtitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: .78rem;
+    color: $text-muted;
+    padding: 0 1.25rem .5rem;
+    line-height: 1.4;
+  }
+
+  .graf-area {
+    padding: 0 .5rem;
+    line-height: 0;
+  }
+
+  .graf-caption {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: .68rem;
+    color: $text-light;
+    padding: .3rem 1.25rem .5rem;
+  }
+}
+
+// ==========================================================================
+// OJS INPUT OVERRIDES
+// ==========================================================================
+
+.observablehq {
+  form {
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  input[type="text"],
+  select {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: .82rem;
+    border: 2px solid $ink;
+    border-radius: 0;
+    padding: .5rem .75rem;
+    color: $ink;
+    background: #fff;
+
+    &:focus {
+      outline: none;
+      border-color: $green;
+    }
+  }
+
+  input[type="range"] {
+    accent-color: $green;
+  }
+}
+
+// Sökfält
+.observablehq input[type="search"] {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: .82rem;
+  border: 2px solid $ink;
+  border-radius: 0;
+  padding: .5rem .75rem;
+}
+
+// ==========================================================================
+// SCROLLBAR
+// ==========================================================================
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: $bg;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8c8c4;
+  border-radius: 0;
+}
+
+// ==========================================================================
+// GLOBALA TEXTFÄRGSREGLER — fångar upp alla vita-bakgrund-situationer
+// ==========================================================================
+
+// Dashboard-rubriker och innehåll
+.dashboard-page,
+.dashboard-content,
+.tab-content,
+.tab-pane {
+  color: $ink;
+}
+
+// Tabset-flikar inne i cards — mörkgrön accent
+.card .nav-tabs .nav-link.active {
+  color: $green;
+  border-bottom-color: $green;
+}
+
+// OJS-genererade element — explicit mörk text
+[class*="observablehq"] {
+  color: $ink;
+}
+
+// Sidebar-text explicit mörk
+.sidebar p,
+.sidebar span,
+.sidebar div {
+  color: $ink-body;
+}
+
+// Quarto dashboard-specifika containers
+.bslib-value-box .value-box-value {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 800;
+}
+
+.bslib-value-box .value-box-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: .68rem;
+}
+
+// ==========================================================================
+// INNEHÅLLSGRID — graf till vänster, text till höger
+// ==========================================================================
+
+.content-grid {
+  display: grid !important;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+  padding: .5rem 0;
+}
+
+.chart-col {
+  min-width: 0;
+}
+
+.text-col {
+  min-width: 0;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+// Filter-rad ovanför grafen
+.filter-row {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid $border;
+
+  form {
+    margin-bottom: 0 !important;
+  }
+}
+
+// ==========================================================================
+// OM RAPPORTEN — textlayout
+// ==========================================================================
+
+.about-text {
+  font-family: 'Merriweather', serif;
+  font-size: .875rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: $ink-body;
+  max-width: 800px;
+
+  p {
+    margin-bottom: .75em;
+  }
+
+  a {
+    color: $green;
+    text-decoration: underline;
+  }
+
+  ol {
+    padding-left: 1.5rem;
+    margin-bottom: .75em;
+  }
+}
+
+// ==========================================================================
+// RESPONSIV
+// ==========================================================================
+
+@media (max-width: 768px) {
+  .valuebox .value {
+    font-size: 1.3rem;
+  }
+
+  .big-num {
+    font-size: 1.6rem;
+  }
+
+  .card-header {
+    font-size: .82rem;
+    padding: .6rem 1rem .5rem;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ==========================================================================
+// DETAILS / EXPANDERBAR TEXT
+// ==========================================================================
+
+details {
+  font-size: .85rem;
+  color: $ink-body;
+  line-height: 1.6;
+  padding: .25rem 0 0;
+
+  summary {
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: $ink-muted;
+
+    &:hover { color: $ink; }
+  }
+
+  p {
+    margin: .5rem 0 0;
+  }
+}
+
+// ==========================================================================
+// KOMPAKT OJS SELECT I KORT
+// ==========================================================================
+
+.card-body select,
+.observablehq select {
+  font-size: .75rem;
+  padding: .15rem .4rem;
+  border: 1px solid $border;
+  border-radius: 3px;
+  background: #fff;
+  color: $ink;
+  height: auto;
+  line-height: 1.2;
+}
+
+// ==========================================================================
+// CHART-CARD
+// ==========================================================================
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 12px 10px;
+  overflow: hidden;
+}
+
+// Filter — kompakt rad
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid $border;
+  overflow: hidden;
+
+  form {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: inline-flex;
+    width: fit-content !important;
+  }
+
+  select {
+    font-family: 'Inter', sans-serif;
+    font-size: .6rem !important;
+    padding: 1px 3px !important;
+    border: 1px solid $border !important;
+    border-radius: 3px !important;
+    background: #fff !important;
+    color: $ink !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    transition: border-color .15s;
+
+    &:focus {
+      border-color: $green !important;
+      outline: none;
+    }
+  }
+}
+
+.filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+
+  &:not(:last-child)::after {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: 10px;
+    background: $border;
+    margin-left: 5px;
+  }
+}
+
+.filter-label {
+  font-family: 'Inter', sans-serif;
+  font-size: .65rem;
+  font-weight: 500;
+  color: $text-muted;
+}
+
+// Plot titel/subtitle
+.chart-card figure[class*="plot"] {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: .88rem;
+    font-weight: 600;
+    color: $green-dark;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+  }
+
+  h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: .72rem;
+    font-weight: 400;
+    color: $text-muted;
+    margin: 1px 0 4px;
+    padding: 0;
+    border: none !important;
+  }
+}
+
+// Indikatortext under graf
+.chart-note {
+  font-family: 'Merriweather', serif;
+  font-size: .76rem;
+  font-weight: 300;
+  line-height: 1.7;
+  color: $ink-muted;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid $border;
+}

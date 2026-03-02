@@ -1,0 +1,14 @@
+project:
+  type: website
+  output-dir: _output
+  resources:
+    - "*.svg"
+    - "data/*.xlsx"
+
+format:
+  dashboard:
+    theme:
+      - cosmo
+      - styles.scss
+    logo: logo_vit.svg
+    orientation: rows

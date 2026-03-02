@@ -1,0 +1,165 @@
+# Fil: R/modules/card_modules.R
+
+#' Skapar ett kort med graf och förklaringsflik
+#' 
+#' @param id Unikt ID för kortet och dess komponenter
+#' @param explanation_text Text som ska visas i förklaringsfliken
+#' @return Ett navset_card_tab objekt
+#' @import shiny
+#' @import bslib
+
+skapa_kort <- function(id, explanation_text = NULL, forklaringar = list()) {
+  # Om explanation_text används, konvertera till forklaringar-format
+  if (!is.null(explanation_text)) {
+    forklaringar = list(
+      list(
+        titel = "Befolkningsutveckling",
+        text = explanation_text
+      )
+    )
+  }
+  
+  navset_card_tab(
+    full_screen = FALSE,
+    title = div(
+      style = "width: 100%; display: flex; justify-content: space-between; align-items: center;",
+      span(),
+      div(
+        style = "position: absolute; right: 10px;",
+        downloadButton(
+          paste0("download_svg_", id),
+          "",
+          icon = icon("download"),
+          class = "btn btn-sm btn-outline-primary",
+          style = "padding: 4px 8px; font-size: 0.8rem; margin-right: 5px;"
+        ),
+        downloadButton(
+          paste0("download_data_", id),
+          "",
+          icon = icon("file-excel"),
+          class = "btn btn-sm btn-outline-success",
+          style = "padding: 4px 8px; font-size: 0.8rem;"
+        )
+      )
+    ),
+    nav_panel(
+      title = "Graf",
+      div(
+        girafeOutput(paste0("plot_", id), width = "100%", height = NULL)
+      )
+    ),
+    nav_panel(
+      title = "Förklaring",
+      div(
+        class = "explanation-text",
+        style = "padding: 5px 15px; font-family: 'Roboto Slab', serif; color: #001B22;",  # Minskad padding-top från 15px till 5px
+        
+        # Loopa genom alla förklaringar
+        lapply(forklaringar, function(forklaring) {
+          tagList(
+            h3(forklaring$titel, 
+               style = "color: #00495D; font-weight: bold; font-size: 14px; margin-top: 0;"),  # Tog bort margin-top för första titeln
+            p(forklaring$text, 
+              style = "margin-top: 5px;")  # Lagt till mindre margin efter titeln
+          )
+        })
+      )
+    )
+  )
+}
+
+#' Skapar en graf i servern med anpassningsbara parametrar
+#' 
+#' @param id Unikt ID för grafen
+#' @param data Data som ska användas för grafen
+#' @param graph_type Funktion som ska användas för att skapa grafen
+#' @param output Shiny output objekt
+#' @param filtered_data Reaktiv expression med filtrerad data
+#' @param title Grafens titel
+#' @param subtitle Grafens undertitel
+#' @param caption Text under grafen
+#' @param y_axis_title Y-axelns titel (NULL för ingen titel)
+#' @param x_axis_title X-axelns titel (NULL för ingen titel)
+#' @param color_palette Lista med färger för olika regioner
+#' @param download_filename Basnamn för nedladdade filer
+#' @import shiny
+#' @import ggiraph
+#' 
+skapa_graf <- function(id, 
+                       data, 
+                       graph_type, 
+                       output, 
+                       filtered_data,
+                       title = "Befolkningsutveckling",
+                       subtitle = "Antal invånare efter region och år (2000-2040)",
+                       caption = "Källa: SCB",
+                       y_axis_title = NULL,
+                       x_axis_title = NULL,
+                       color_palette = NULL,
+                       download_filename = "befolkningsutveckling",
+                       prognos = NULL) {
+  
+  # Skapa plot som reaktiv expression
+  plot_reactive <- reactive({
+    # Skapa en lista med alla grafparametrar
+    plot_params <- list(
+      data = filtered_data(),
+      title = title,
+      subtitle = subtitle,
+      caption = caption,
+      y_axis_title = y_axis_title,
+      x_axis_title = x_axis_title,
+      prognos = prognos
+    )
+    
+    # Lägg till color_palette om den är specificerad
+    if (!is.null(color_palette)) {
+      plot_params$color_palette <- color_palette
+    }
+    
+    # Anropa graph_type med alla parametrar
+    do.call(graph_type, plot_params)
+  })
+  
+  # Rendera grafen
+  output[[paste0("plot_", id)]] <- renderGirafe({
+    plot_reactive()
+  })
+  
+  # Hantera SVG-nedladdning
+  output[[paste0("download_svg_", id)]] <- downloadHandler(
+    filename = function() {
+      paste0(download_filename, "_", format(Sys.Date(), "%Y%m%d"), ".svg")
+    },
+    content = function(file) {
+      width <- 13.333
+      height <- width / 1.618
+      
+      temp_plot <- plot_reactive()
+      temp_plot$width <- width
+      temp_plot$height <- height
+      
+      girafe_svg <- temp_plot$x$html
+      writeLines(girafe_svg, file)
+    }
+  )
+  
+  # Hantera data-nedladdning
+  output[[paste0("download_data_", id)]] <- downloadHandler(
+    filename = function() {
+      paste0(download_filename, "_data_", format(Sys.Date(), "%Y%m%d"), ".xlsx")
+    },
+    content = function(file) {
+      # Konvertera till dataframe och ta bort Region-kolumnen
+      export_data <- as.data.frame(filtered_data())
+      if("Region" %in% names(export_data)) {
+        export_data <- export_data[, !names(export_data) %in% "Region"]
+      }
+      
+      wb <- createWorkbook()
+      addWorksheet(wb, "Data")
+      writeData(wb, "Data", export_data, rowNames = FALSE)
+      saveWorkbook(wb, file, overwrite = TRUE)
+    }
+  )
+}

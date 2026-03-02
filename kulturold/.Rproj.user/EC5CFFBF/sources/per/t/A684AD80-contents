@@ -1,0 +1,525 @@
+############ Linjediagram #############
+
+
+#' @param data En dataframe med kolumnerna År, Region och Värde
+#' @param title Grafens huvudtitel
+#' @param subtitle Grafens undertitel
+#' @param caption Text under grafen
+#' @param y_axis_title Y-axelns titel (NULL för ingen titel)
+#' @param x_axis_title X-axelns titel (NULL för ingen titel)
+#' @param color_palette Lista med färger för olika regioner
+#' @return Ett girafe-objekt med interaktiv visualisering
+#' @import ggplot2
+#' @import ggiraph
+#' @import ggrepel
+#' @import dplyr
+
+create_line_plot <- function(data,
+                             title = "Befolkningsutveckling",
+                             subtitle = "Antal invånare efter region och år (2000-2040)",
+                             caption = "Källa: SCB",
+                             y_axis_title = NULL,
+                             x_axis_title = NULL,
+                             color_palette = NULL,
+                             prognos = NULL) {
+  
+  # Definiera standardfärger om ingen palett anges
+  if (is.null(color_palette)) {
+    main_color <- "#00495D"
+    secondary_colors <- c(
+      "#20AC6C", "#82CD9E", "#28B2C5", "#A3D8E7", 
+      "#ED6A55", "#F29385", "#FDC75F"
+    )
+    
+    unique_groups <- unique(data$Region)
+    n_groups <- length(unique_groups)
+    
+    color_palette <- setNames(
+      c(main_color, secondary_colors[1:(n_groups-1)]),
+      c("Halland", setdiff(unique_groups, "Halland"))
+    )
+  }
+  
+  # Definiera textfärger
+  title_color <- "#001B22"
+  
+  plot_data <- data %>%
+    group_by(Region) %>%
+    arrange(År, .by_group = TRUE) %>%
+    mutate(
+      # Här är den viktiga ändringen - sista året för VARJE serie ska ha etikett
+      label = if_else(År == max(År), str_replace(Region, " ", "\n"), NA_character_),
+      Värde = if_else(!is.na(År) & !is.na(Värde), Värde, NA_real_)
+    ) %>%
+    filter(!is.na(Värde)) %>%
+    ungroup() %>%
+    # Lägg till tooltip text
+    mutate(
+      tooltip_text = sprintf(
+        "<div>
+       <strong style='font-size: 14px;'>%s</strong><br>
+       <span style='font-size: 12px;'><b>År:</b> %d</span><br>
+       <span style='font-size: 12px;'><b>Värde:</b> %s</span>
+       </div>",
+       Region,
+       År,
+       format(Värde, big.mark = " ", scientific = FALSE)
+      )
+    )
+  
+  # Beräkna axlar och padding
+  y_breaks <- pretty(range(plot_data$Värde, na.rm = TRUE), n = 7)
+  x_breaks <- pretty(range(plot_data$År, na.rm = TRUE), n = 5)
+  x_range <- diff(range(plot_data$År))
+  label_padding <- x_range * 0.05
+  
+  # Skapa basgraf
+  p <- ggplot(
+    plot_data,
+    aes(
+      x = År,
+      y = Värde,
+      group = Region,
+      color = Region
+    )
+  ) +
+    # Bakgrundslinjer
+    geom_segment(
+      data = tibble(y = y_breaks, 
+                    x1 = min(plot_data$År), 
+                    x2 = max(plot_data$År)),
+      aes(x = x1, xend = x2, y = y, yend = y),
+      inherit.aes = FALSE,
+      color = "#F0F0F0",
+      size = .2
+    ) +
+    
+    {if (!is.null(prognos)) {
+      list(
+        # Grå rektangel för prognosperiod
+        annotate("rect",
+                 xmin = prognos,
+                 xmax = max(plot_data$År),
+                 ymin = -Inf,
+                 ymax = Inf,
+                 fill = "grey90",
+                 alpha = 0.3),
+        # Text "Prognosperiod"
+        annotate("text",
+                 x = prognos + 0.2,
+                 y = Inf,
+                 label = "Prognosperiod",
+                 hjust = 0,
+                 vjust = 1,
+                 size = 2.3,
+                 family = "Roboto Slab",
+                 color = "grey40")
+      )
+    }} +
+    
+    # Axellinjer
+    geom_segment(
+      aes(
+        x = min(År), 
+        xend = min(År), 
+        y = min(y_breaks), 
+        yend = max(y_breaks)
+      ),
+      color = "#001B22",
+      size = .1
+    ) +
+    geom_segment(
+      aes(
+        x = min(År), 
+        xend = max(År), 
+        y = min(y_breaks), 
+        yend = min(y_breaks)
+      ),
+      color = "#001B22",
+      size = .1
+    ) +
+    # Linjer och punkter
+    geom_line(size = .4) +
+    geom_point_interactive(
+      aes(
+        tooltip = tooltip_text,
+        data_id = paste0(Region, "_", År)
+      ),
+      size = 1,
+      alpha = 0.7
+    ) +
+    # Etiketter
+    geom_text_repel(
+      aes(label = label),
+      family = "Roboto Slab",
+      size = 2.5,
+      direction = "y",
+      xlim = c(max(plot_data$År) + label_padding, NA),
+      hjust = 0,
+      segment.size = 0.4,
+      segment.alpha = 0.8,
+      segment.linetype = "dotted",
+      box.padding = 0.4,
+      segment.curvature = -0.1,
+      segment.ncp = 3,
+      segment.angle = 20,
+      min.segment.length = 0,
+      force = 1,
+      na.rm = TRUE
+    ) +
+    # Skalor och koordinater
+    coord_cartesian(
+      clip = "off",
+      ylim = range(y_breaks)
+    ) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      limits = c(min(plot_data$År, na.rm = TRUE), 
+                 max(plot_data$År, na.rm = TRUE) + (diff(range(plot_data$År, na.rm = TRUE)) * 0.25)), 
+      breaks = seq(min(plot_data$År, na.rm = TRUE), 
+                   max(plot_data$År, na.rm = TRUE), 
+                   by = 5)
+    )+
+    scale_y_continuous(
+      expand = c(0, 0),
+      breaks = y_breaks,
+      labels = scales::label_number(big.mark = " ")
+    ) +
+    scale_color_manual(values = color_palette) +
+    # Titlar och etiketter
+    labs(
+      title = title,
+      subtitle = subtitle,
+      caption = caption,
+      x = x_axis_title,
+      y = y_axis_title
+    ) +
+    theme_minimal() +
+    theme(
+      plot.background = element_blank(),
+      panel.background = element_rect(fill = "white", color = NA),
+      panel.grid = element_blank(),
+      legend.position = "none",
+      plot.title = element_text(
+        size = 10, 
+        color = title_color, 
+        face = "bold",
+        family = "Roboto Slab",
+        margin = margin(b = 4)
+      ),
+      plot.subtitle = element_text(
+        size = 8, 
+        color = "#00495D",
+        family = "Roboto Slab",
+        margin = margin(b = 4)
+      ),
+      plot.caption = element_text(
+        size = 6,
+        color = "#666666",
+        family = "Roboto Slab",
+        margin = margin(t = 10)
+      ),
+      axis.text = element_text(
+        size = 7,
+        color = "#001B22",
+        family = "Roboto Slab"
+      ),
+      axis.title = element_text(
+        size = 6.5,
+        color = "#666666",
+        family = "Roboto Slab"
+      ),
+      axis.line = element_blank(),
+      axis.ticks = element_line(color = "#001B22", size = 0.2),
+      axis.ticks.length = unit(0.1, "cm"),
+      plot.margin = margin(1, 1, 1, 1)
+    )
+  
+  # Skapa en kopia av data för export och ta bort Region-kolumnen
+  export_data <- plot_data %>%
+    select(-Region)
+  
+  # Skapa girafe-objekt
+  girafe(
+    ggobj = p,
+    width_svg = 5,
+    height_svg = 4,
+    options = list(
+      opts_sizing(
+        rescale = TRUE,
+        width = 1
+      ),
+      opts_hover(
+        css = "
+          stroke-width: 2.5;
+          r: 3;
+          cursor: crosshair;
+          transition: all 0.2s ease;
+        ",
+        reactive = FALSE
+      ),
+      opts_toolbar(saveaspng = FALSE),
+      opts_tooltip(
+        css = "
+          font-size: 16px;
+          background: white;
+          color: #00495D;
+          padding: 12px;
+          border-radius: 6px;
+          line-height: 1.3;
+          font-family: 'Roboto Slab', sans-serif;
+          border: 1px solid #00495D;
+          box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+        "
+      ),
+      opts_selection(type = "none")
+    ),
+  )
+}
+
+
+#### Åldersplott
+
+create_age_group_plot <- function(data,
+                                  title = "Befolkningsutveckling efter åldersgrupp",
+                                  subtitle = "Antal invånare efter åldersgrupp och år (2000-2040)",
+                                  caption = "Källa: SCB",
+                                  y_axis_title = NULL,
+                                  x_axis_title = NULL,
+                                  color_palette = NULL,
+                                  prognos = NULL) {
+  
+  # Definiera standardfärger om ingen palett anges
+  if (is.null(color_palette)) {
+    color_palette <- c(
+      "0-19" = "#20AC6C",    # Grön för unga
+      "20-64" = "#00495D",   # Blå för arbetsför ålder
+      "65-79" = "#28B2C5",   # Ljusblå för yngre äldre
+      "80+" = "#ED6A55"      # Röd för äldre äldre
+    )
+  }
+  
+  # Definiera textfärger
+  title_color <- "#001B22"
+  
+  plot_data <- data %>%
+    group_by(Åldersgrupp) %>%
+    arrange(År, .by_group = TRUE) %>%
+    mutate(
+      label = if_else(År == max(År), Åldersgrupp, NA_character_),
+      tooltip_text = sprintf(
+        "<div>
+         <strong style='font-size: 14px;'>%s</strong><br>
+         <span style='font-size: 12px;'><b>År:</b> %s</span><br>
+         <span style='font-size: 12px;'><b>Antal:</b> %s</span>
+         </div>",
+        Åldersgrupp,
+        År,
+        format(Värde, big.mark = " ", scientific = FALSE)
+      )
+    ) %>%
+    ungroup()
+  
+  # Beräkna axlar och padding
+  y_breaks <- pretty(range(plot_data$Värde, na.rm = TRUE), n = 7)
+  x_breaks <- pretty(range(as.numeric(plot_data$År), na.rm = TRUE), n = 5)
+  x_range <- diff(range(as.numeric(plot_data$År)))
+  label_padding <- x_range * 0.05
+  
+  # Skapa basgraf
+  p <- ggplot(
+    plot_data,
+    aes(
+      x = as.numeric(År),
+      y = Värde,
+      group = Åldersgrupp,
+      color = Åldersgrupp
+    )
+  ) +
+    # Bakgrundslinjer
+    geom_segment(
+      data = tibble(y = y_breaks, 
+                    x1 = min(as.numeric(plot_data$År)), 
+                    x2 = max(as.numeric(plot_data$År))),
+      aes(x = x1, xend = x2, y = y, yend = y),
+      inherit.aes = FALSE,
+      color = "#F0F0F0",
+      size = .2
+    ) +
+    
+    {if (!is.null(prognos)) {
+      list(
+        # Grå rektangel för prognosperiod
+        annotate("rect",
+                 xmin = prognos,
+                 xmax = max(as.numeric(plot_data$År)),
+                 ymin = -Inf,
+                 ymax = Inf,
+                 fill = "grey90",
+                 alpha = 0.3),
+        # Text "Prognosperiod"
+        annotate("text",
+                 x = prognos + 0.2,
+                 y = Inf,
+                 label = "Prognosperiod",
+                 hjust = 0,
+                 vjust = 1,
+                 size = 2.3,
+                 family = "Roboto Slab",
+                 color = "grey40")
+      )
+    }} +
+    
+    # Axellinjer
+    geom_segment(
+      aes(
+        x = min(as.numeric(År)), 
+        xend = min(as.numeric(År)), 
+        y = min(y_breaks), 
+        yend = max(y_breaks)
+      ),
+      color = "#001B22",
+      size = .1
+    ) +
+    geom_segment(
+      aes(
+        x = min(as.numeric(År)), 
+        xend = max(as.numeric(År)), 
+        y = min(y_breaks), 
+        yend = min(y_breaks)
+      ),
+      color = "#001B22",
+      size = .1
+    ) +
+    # Linjer och punkter
+    geom_line(size = .4) +
+    geom_point_interactive(
+      aes(
+        tooltip = tooltip_text,
+        data_id = paste0(Åldersgrupp, "_", År)
+      ),
+      size = 1,
+      alpha = 0.7
+    ) +
+    # Etiketter
+    geom_text_repel(
+      aes(label = label),
+      family = "Roboto Slab",
+      size = 2.5,
+      direction = "y",
+      xlim = c(max(as.numeric(plot_data$År)) + label_padding, NA),
+      hjust = 0,
+      segment.size = 0.4,
+      segment.alpha = 0.8,
+      segment.linetype = "dotted",
+      box.padding = 0.4,
+      segment.curvature = -0.1,
+      segment.ncp = 3,
+      segment.angle = 20,
+      min.segment.length = 0,
+      force = 1,
+      na.rm = TRUE
+    ) +
+    # Skalor och koordinater
+    coord_cartesian(
+      clip = "off",
+      ylim = range(y_breaks)
+    ) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      limits = c(min(as.numeric(plot_data$År)), 
+                 max(as.numeric(plot_data$År)) + (diff(range(as.numeric(plot_data$År))) * 0.25)), 
+      breaks = x_breaks
+    ) +
+    scale_y_continuous(
+      expand = c(0, 0),
+      breaks = y_breaks,
+      labels = scales::label_number(big.mark = " ")
+    ) +
+    scale_color_manual(values = color_palette) +
+    # Titlar och etiketter
+    labs(
+      title = title,
+      subtitle = subtitle,
+      caption = caption,
+      x = x_axis_title,
+      y = y_axis_title
+    ) +
+    theme_minimal() +
+    theme(
+      plot.background = element_blank(),
+      panel.background = element_rect(fill = "white", color = NA),
+      panel.grid = element_blank(),
+      legend.position = "none",
+      plot.title = element_text(
+        size = 10, 
+        color = title_color, 
+        face = "bold",
+        family = "Roboto Slab",
+        margin = margin(b = 4)
+      ),
+      plot.subtitle = element_text(
+        size = 8, 
+        color = "#00495D",
+        family = "Roboto Slab",
+        margin = margin(b = 4)
+      ),
+      plot.caption = element_text(
+        size = 6,
+        color = "#666666",
+        family = "Roboto Slab",
+        margin = margin(t = 10)
+      ),
+      axis.text = element_text(
+        size = 7,
+        color = "#001B22",
+        family = "Roboto Slab"
+      ),
+      axis.title = element_text(
+        size = 6.5,
+        color = "#666666",
+        family = "Roboto Slab"
+      ),
+      axis.line = element_blank(),
+      axis.ticks = element_line(color = "#001B22", size = 0.2),
+      axis.ticks.length = unit(0.1, "cm"),
+      plot.margin = margin(1, 1, 1, 1)
+    )
+  
+  # Skapa girafe-objekt
+  girafe(
+    ggobj = p,
+    width_svg = 5,
+    height_svg = 4,
+    options = list(
+      opts_sizing(
+        rescale = TRUE,
+        width = 1
+      ),
+      opts_hover(
+        css = "
+          stroke-width: 2.5;
+          r: 3;
+          cursor: crosshair;
+          transition: all 0.2s ease;
+        ",
+        reactive = FALSE
+      ),
+      opts_toolbar(saveaspng = FALSE),
+      opts_tooltip(
+        css = "
+          font-size: 16px;
+          background: white;
+          color: #00495D;
+          padding: 12px;
+          border-radius: 6px;
+          line-height: 1.3;
+          font-family: 'Roboto Slab', sans-serif;
+          border: 1px solid #00495D;
+          box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+        "
+      ),
+      opts_selection(type = "none")
+    )
+  )
+}
